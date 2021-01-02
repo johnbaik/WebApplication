@@ -1,6 +1,5 @@
 # WebApplication
-School project
-<br/><br/>
+Web Application<br/><br/>
 Deployment using **DOCKER** on localhost<br/>
 
 **Frontend**: HTML, CSS, JS, AJAX<br/>
