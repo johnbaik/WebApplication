@@ -1,0 +1,182 @@
+version: '3.3'
+
+services:
+  # php - apache
+  website:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: website
+    hostname: website
+    restart: always
+    depends_on:
+      - keyrock
+      - restapi
+    volumes:
+        - ./php:/var/www/html
+    ports:
+        - 8000:80
+    links: 
+      - orion
+
+  orion:
+    image: fiware/orion
+    container_name: orion
+    restart: always
+    hostname: orion
+    ports:
+      - "1026:1026"
+    expose:
+      - "1026"
+    depends_on:
+      - notif-mongo
+    links:
+      - notif-mongo
+    command: -dbhost notif-mongo
+
+  notif-mongo:
+    image: mongo
+    container_name: notif-mongo
+    restart: always
+    hostname: notif-mongo
+    volumes:
+      - ./notification-db:/data/db
+    ports:
+      - "27017:27017"
+    expose:
+      - "27017"
+    command: --nojournal
+         
+  pepProxy:
+    image: fiware/pep-proxy
+    container_name: pepProxy
+    restart: always
+    hostname: pepProxy
+    depends_on: 
+      - restapi
+      - keyrock
+    ports: 
+      - "1027:1027"
+    expose: 
+      - "1027"
+    environment: 
+      - PEP_PROXY_APP_HOST=restapi
+      - PEP_PROXY_APP_PORT=5000
+      - PEP_PROXY_PORT=1027
+      - PEP_PROXY_IDM_HOST=keyrock
+      - PEP_PROXY_IDM_PORT=3000
+      - PEP_PROXY_APP_ID=da571d55-1983-4804-a90a-f0a31298de66
+      - PEP_PROXY_USERNAME=pep_proxy_1f0f88ad-debe-443f-a063-3f1892166e2d
+      - PEP_PASSWORD=pep_proxy_6971e684-1a6c-4369-b99f-70e1be6bb932
+      - PEP_PROXY_MAGIC_KEY=1234
+
+  keyrock:
+    image: fiware/idm:7.6.0
+    restart: always
+    container_name: keyrock
+    hostname: keyrock
+    depends_on:
+          - mysql-db
+    ports:
+            - '3000:3000'
+            - '443:443'
+    environment:
+      DEBUG: idm:*
+      IDM_DB_HOST: mysql-db
+      IDM_HOST: http://localhost:3000 
+      IDM_PORT: 3000
+        # Development use only
+        # Use Docker Secrets for Sensitive Data
+      IDM_DB_PASS: root
+      IDM_DB_USER: root
+      IDM_ADMIN_USER: admin
+      IDM_ADMIN_EMAIL: admin@test.com
+      IDM_ADMIN_PASS: 1234
+        # If sending eMails point to any STMP server
+        # - IDM_EMAIL_HOST=mailer
+            # - IDM_EMAIL_PORT=25
+
+  mysql-db:
+    restart: always
+    image: mysql:5.7
+    hostname: mysql-db
+    container_name: mysql-db
+    command: --default-authentication-plugin=mysql_native_password
+
+    # networks:
+    #   default:
+    #     ipv4_address: 172.18.0.6
+    expose:
+      - '3306'
+    ports:
+      - '4000:3306'
+    environment:
+   # Development use only
+   # Use Docker Secrets for Sensitive Data
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: user
+      MYSQL_PASSWORD: user
+      MYSQL_ROOT_HOST: "%" #mysql-db #172.18.0.5
+    volumes:
+   #- ./KeyrockMySql:/docker-entrypoint-initdb.d
+      - ./KeyDb:/var/lib/mysql
+
+  phpmyadminKeyrock:
+      container_name: phpmyadminKeyrock 
+      depends_on:
+      - mysql-db
+      image: phpmyadmin/phpmyadmin
+      restart: always
+      ports:
+      - '9000:80'
+      environment:
+         PMA_HOST: mysql-db
+         MYSQL_ROOT_PASSWORD: root
+
+         # MYSQL_ROOT_PASSWORD:
+    # mailer:
+    #     restart: always
+    #     image: mazdermind/docker-mail-relay
+    #     hostname: mailer
+    #     container_name: mailer
+    #     ports:
+    #         - '25:25'
+    #     environment:
+    #         - SMTP_LOGIN=<login> # Login to connect to the external relay
+    #         - SMTP_PASSWORD=<password> # Password to connect to the external relay
+    #         - EXT_RELAY_HOST=<hostname> # External relay DNS name
+    #         - EXT_RELAY_PORT=25
+    #         - ACCEPTED_NETWORKS=172.18.1.0/24
+    #         - USE_TLS=no
+  restapi:
+    build:
+      context: ./rest
+      dockerfile: Dockerfile
+    container_name: restapi
+    restart: always
+    depends_on:
+      - mongo_db
+    volumes:
+      - ./rest:/usr/src/app
+    ports:
+      - '5000:5000'
+    links:
+      - mongo_db
+    expose: 
+      - '5000'
+
+  mongo_db:
+    image: mongo:latest
+    restart: always
+    hostname: mongo_db
+    container_name: mongo_db
+    ports:
+      - '27018:27017'
+    # environment:
+    #   - MONGO_INITDB_DATABASE=appdb
+    #   - MONGO_INITDB_ROOT_USERNAME=admin
+    #   - MONGO_INITDB_ROOT_PASSWORD=admin
+    expose:
+      - '27018'
+    volumes:
+      - ./mongodb_data:/data/db
