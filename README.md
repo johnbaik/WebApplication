@@ -1,13 +1,13 @@
 # WebApplication
 School project
+<br/><br/>
+Deployment using **DOCKER** on localhost<br/>
 
-Deployment using **DOCKER** on localhost
-
-**Frontend**: HTML, CSS, JS, AJAX
-**Backend**: PHP, MongoDB
-**REST API**: NodeJS
-
-**AUTHENTICATION**: KEYROCK IDM FIWARE
-**PEP PROXY**: WILMA FIWARE
-**CONTEXT BROCKER**: ORION FIWARE
+**Frontend**: HTML, CSS, JS, AJAX<br/>
+**Backend**: PHP, MongoDB<br/>
+**REST API**: NodeJS<br/>
+<br/><br/>
+**AUTHENTICATION**: KEYROCK IDM FIWARE<br/>
+**PEP PROXY**: WILMA FIWARE<br/>
+**CONTEXT BROCKER**: ORION FIWARE<br/>
 
